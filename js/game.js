@@ -72,18 +72,20 @@ function StartGame() {
   scientist.yv = 0;
   scientists.add(scientist);
 
+  var sharkY = Phaser.Math.Between(height * 0.9, height * 0.95);
   var shark = _scene.add.sprite(
-    width * 0.7,
-    Phaser.Math.Between(height * 0.9, height),
+    width * 0.8,
+    sharkY,
     'shark',
   );
   shark.xv = -1;
   shark.setScale(0.3);
   sharks.add(shark);
 
+  sharkY = Phaser.Math.Between(height * 0.9, height * 0.95);
   shark = _scene.add.sprite(
     width * 0.1,
-    Phaser.Math.Between(height * 0.9, height),
+    sharkY,
     'shark',
   );
   shark.xv = 1;
@@ -129,18 +131,18 @@ function updateStats() {
 
 function moveSharks() {
   sharks.getChildren().forEach((shark) => {
-    if (shark.x < 0 || shark.x > width) {
+    scientists.getChildren().forEach(scientist => {
+      console.log('shark ate scientist')
+      if(collisionTest(scientist,shark))
+      {
+        scientist.destroy();
+      }
+    });
+       if (shark.x < 0 || shark.x > width) {
       shark.xv = -shark.xv;
       shark.flipX = !shark.flipX;
     }
     shark.x += shark.xv;
- scientists.getChildren().forEach(scientist => {
-   if(collisionTest(shark,scientist))
-   {
-     console.log('shark ate scientist');
-     scientist.destroy();
-   }
- });
   });
 }
 
@@ -195,14 +197,15 @@ function update() {
       scientist.yv =0;
     }
     if (collisionTest(scientist,player)) {
+      console.log('saved scientist')
       score += 100;
-      menSaved++;
+      scientistsSaved++;
       scientist.destroy();
     }
   });
   moveSharks();
   updateStats();
-  saved = menKilled === 0 ? '0%' : (menKilled / menSaved * 100) + '%';
+  saved = scientistsKilled === 0 ? '0%' : (scientistsKilled / scientistsSaved * 100) + '%';
 }
 
 function collisionTest(object1, object2) {
@@ -226,10 +229,9 @@ function collisionTest(object1, object2) {
     rect1.y > rect2.y - rect1.height
   ) {
     return true;
-    // collision detected!
   }
   return false;
-} // end collisionTest
+} 
 
 function LINE(x1, y1, x2, y2, color) {
   graphics.lineStyle(1, color, 1.0);

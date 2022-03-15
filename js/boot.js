@@ -12,8 +12,8 @@ var livesText;
 var savedText;
 var saved = 0;
 var height = 500;
-var menKilled = 0;
-var menSaved = 0;
+var scientistsKilled = 0;
+var scientistsSaved = 0;
 
 var grey = 0xAAAAAA;
 var white = 0xFFFFFF;
