@@ -14,7 +14,7 @@ var saved = 0;
 var height = 500;
 var scientistsKilled = 0;
 var scientistsSaved = 0;
-
+const SEA_LEVEL = .85;
 var grey = 0xAAAAAA;
 var white = 0xFFFFFF;
 var yellow = 0xFFFF55;
@@ -22,8 +22,10 @@ var blood = 0xAA0000;
 var blue = 0x0041FF;
 var pink = 0xFF5555;
 
-var scientists = [];
-var sharks = [];
+var scientists;
+var sharks;
+var stars;
+var drops;
 
 const introText = 
 '****************************** SPACE STATION ZERO ******************************\n' +
