@@ -44,7 +44,8 @@ function StartGame() {
   }
   //draw ocean
   RECT(0, height * SEA_LEVEL, width, height, blue);
-  drops =  _scene.add.group();
+  waterDrops =  _scene.add.group();
+  bloodDrops =  _scene.add.group();
 
   //player
   player = _scene.add.sprite(width / 2, height / 2, 'ship');
@@ -54,7 +55,8 @@ function StartGame() {
   _scene.input.keyboard.on('keydown_LEFT', function (event) {
     player.xv--;
   });
-  player.setOrigin(0, 0);
+  player.setOrigin(0);
+  player.spriteScale = 0.6;
   _scene.input.keyboard.on('keydown_RIGHT', function (event) {
     player.xv++;
   });
@@ -69,14 +71,6 @@ function StartGame() {
   sharks = _scene.add.group();
   scientists = _scene.add.group();
   
-  var scientist = _scene.add.sprite(
-    Phaser.Math.Between(10, 800),
-    0,
-    'scientist',
-  );
-  scientist.yv = 0;
-  scientists.add(scientist);
-
   spawnShark(0,1);
   spawnShark(width,-1);
 
@@ -102,7 +96,7 @@ function StartGame() {
       },
   );
 
-  savedText = _scene.add.text(width * 0.75, height * 0.01, 'SAVED: ' + saved, {
+  savedText = _scene.add.text(width * 0.75, height * 0.01, 'SAVED: ' + savedPercent, {
     fontFamily: 'Arial',
     fontSize: '18px',
     color: '#ff0000',
@@ -114,18 +108,20 @@ function StartGame() {
 function updateStats() {
   scoreText.setText('SCORE: ' + score);
   livesText.setText('SCIENTISTS: ' + lives);
-  savedText.setText('SAVED: ' + saved);
+  savedText.setText('SAVED: ' + savedPercent +'%');
 }
 
 function spawnShark(sharkX, sharkXV){
-  var sharkY = Phaser.Math.Between(height * SEA_LEVEL, height * 0.95);
+  var sharkY = Phaser.Math.Between(height * SEA_LEVEL, height * SEA_LEVEL);
   var shark = _scene.add.sprite(
     sharkX,
     sharkY,
     'shark',
   );
   shark.xv = sharkXV;
-  shark.setScale(0.3*-sharkXV);
+  shark.setScale(0.3*-sharkXV,0.3);
+  shark.spriteScale = .3;
+  shark.setOrigin(0);
   sharks.add(shark);
 }
 
@@ -134,11 +130,11 @@ function moveSharks() {
     scientists.getChildren().forEach(scientist => {
       if(collisionTest(scientist,shark))
       {
-        console.log('shark ate scientist')
+        killScientist(scientist);
         scientist.destroy();
       }
     });
-       if (shark.x < 0 || shark.x > width) {
+    if (shark.x < 0 || shark.x > width) {
       shark.xv = -shark.xv;
       shark.flipX = !shark.flipX;
     }
@@ -146,13 +142,22 @@ function moveSharks() {
   });
 }
 
+function killScientist(scientist){
+  for (var t = -10; t < 10; t+=.25) {
+    var drop = _scene.add.sprite(scientist.x+t,scientist.y-1,'star');
+    drop.yv=Phaser.Math.Between(-25, 10)/10;
+    drop.xv = t*2;
+    drop.setTint(blood);
+    drop.life = 25;
+    bloodDrops.add(drop);
+  }
+}
 function Splash(scientist) {
-  for (t = -20; t < 20; t++) {
+  for (var t = -10; t < 10; t+=.25) {
     var drop = _scene.add.sprite(scientist.x+t,scientist.y,'star');
-    drop.yv=-5;
-    drop.xv = t;
-    drop.life = 50;
-    drops.add(drop);
+    drop.yv=-Phaser.Math.Between(25, 55)/10;
+    drop.xv = t*3;
+    waterDrops.add(drop);
   }
 }
 
@@ -183,18 +188,22 @@ function ShowIntro() {
   });
 }
 
+function spawnScientist(){
+  var scientist = _scene.add.sprite(
+    Phaser.Math.Between(10, width-10),
+    0,
+    'scientist',
+  );
+  scientist.yv = 1;
+  scientist.spriteScale =1;
+  scientist.inWater = false;
+  scientists.add(scientist);
+}
+
 function update() {
   if (!startGame) return;
-  if (Phaser.Math.Between(1, 200) == 100) {
-    var scientist = _scene.add.sprite(
-      Phaser.Math.Between(10, 800),
-      0,
-      'scientist',
-    );
-    scientist.yv = 0;
-    scientist.inWater = false;
-    scientists.add(scientist);
-  }
+  if (Phaser.Math.Between(1, 200) == 100)
+     spawnScientist();
   if (player.x > width) player.x = 0;
   if (player.x < 0) player.x = width;
   if (player.y < 0) player.y = 0;
@@ -202,70 +211,88 @@ function update() {
   player.y += player.yv;
   stars.getChildren().forEach((star) => {
     if(Phaser.Math.Between(1, 100)==1)
-  star.setTint(Math.random() * 0xffffff);
+      star.setTint(Math.random() * 0xffffff);
   });
 
-  if (player.y > height * SEA_LEVEL) Crash();
+  if (player.y > height * SEA_LEVEL) 
+    Crash();
+  
   scientists.getChildren().forEach((scientist) => {
-    scientist.y += scientist.yv;
-    scientist.yv += 0.025;
-    if (scientist.y > height * SEA_LEVEL) {
+  scientist.y += scientist.yv;
+  scientist.yv += 0.025;
+  if (collisionTest(scientist,player)) {
+    score += 100;
+    saved ++;
+    scientist.destroy();
+}
+
+  if (scientist.y > height * SEA_LEVEL) {
      if(!scientist.inWater) 
      {
-       Splash(scientist);
+      Splash(scientist);
       scientist.inWater = true;
      }
      else
      {
       scientist.yv =0;
      }
-    }
-    if (collisionTest(scientist,player)) {
-      score += 100;
-      scientistsSaved++;
-      scientist.destroy();
-    }
+  }
   });
   moveSharks();
-  if(drops.children.entries.length>0)
+  if(waterDrops.children.entries.length>0)
     moveDrops();
+  if(bloodDrops.children.entries.length>0)
+    moveBloodDrops();
+  savedPercent = (saved / START_LIVES * 100);
   updateStats();
-  saved = scientistsKilled === 0 ? '0%' : (scientistsKilled / scientistsSaved * 100) + '%';
+}
+
+function moveBloodDrops(){
+  bloodDrops.children.entries.forEach(drop => {
+    drop.y+=drop.yv;
+    drop.x+=drop.xv/20;
+    if(drop.y<height*SEA_LEVEL)
+      drop.yv+=.2;
+    drop.life--;
+    if(drop.life==0) 
+      drop.destroy();    
+  });
 }
 
 function moveDrops(){
-  drops.children.entries.forEach(drop => {
+  waterDrops.children.entries.forEach(drop => {
     drop.y+=drop.yv;
     drop.x+=drop.xv/20;
     drop.yv+=.2;
-    drop.life--;
-    if (drop.life==0)
+    if(drop.y>height*SEA_LEVEL) 
       drop.destroy();    
   });
 }
 function collisionTest(object1, object2) {
   const rect1 = {
-    x: object1.x - object1.width / 2,
-    y: object1.y + object1.height / 2,
-    width: object1.width,
-    height: object1.height,
+    x: object1.x,
+    y: object1.y,
+    width: object1.width * object1.spriteScale,
+    height: object1.height * object1.spriteScale,
   };
   const rect2 = {
-    x: object2.x - object2.width / 2,
-    y: object2.y + object2.height / 2,
-    width: object2.width,
-    height: object2.height,
+    x: object2.x,
+    y: object2.y,
+    width: object2.width * object2.spriteScale,
+    height: object2.height * object2.spriteScale,
   };
-
-  if (
-    rect1.x < rect2.x + rect2.width &&
-    rect1.x + rect1.width > rect2.x &&
+ //RECT(rect1.x, rect1.y, rect1.width, rect1.height, blood)
+ //RECT(rect2.x, rect2.y, rect2.width, rect2.height, blood)
+ 
+ if (
+    rect1.x < rect2.x + rect2.width && 
+    rect1.x + rect1.width > rect2.x && 
     rect1.y < rect2.y + rect2.height &&
-    rect1.y > rect2.y - rect1.height
-  ) {
+    rect1.y + rect1.height > rect2.y
+  ) 
     return true;
-  }
-  return false;
+  else
+    return false;
 } 
 
 function LINE(x1, y1, x2, y2, color) {

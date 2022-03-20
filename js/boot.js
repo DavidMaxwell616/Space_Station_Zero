@@ -1,3 +1,6 @@
+const SEA_LEVEL = .85;
+const START_LIVES = 20;
+
 var score;
 var startGame = false;
 var scoreText;
@@ -11,10 +14,8 @@ var width = 800;
 var livesText;
 var savedText;
 var saved = 0;
+var savedPercent = 0;
 var height = 500;
-var scientistsKilled = 0;
-var scientistsSaved = 0;
-const SEA_LEVEL = .85;
 var grey = 0xAAAAAA;
 var white = 0xFFFFFF;
 var yellow = 0xFFFF55;
@@ -25,7 +26,8 @@ var pink = 0xFF5555;
 var scientists;
 var sharks;
 var stars;
-var drops;
+var bloodDrops;
+var waterDrops;
 
 const introText = 
 '****************************** SPACE STATION ZERO ******************************\n' +
