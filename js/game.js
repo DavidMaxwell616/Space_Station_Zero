@@ -46,6 +46,7 @@ function StartGame() {
   RECT(0, height * SEA_LEVEL, width, height, blue);
   waterDrops =  _scene.add.group();
   bloodDrops =  _scene.add.group();
+  particles =  _scene.add.group();
 
   //player
   player = _scene.add.sprite(width / 2, height / 2, 'ship');
@@ -60,7 +61,9 @@ function StartGame() {
   _scene.input.keyboard.on('keydown_RIGHT', function (event) {
     player.xv++;
   });
-
+  _scene.input.keyboard.on('keydown_SPACE', function (event) {
+    dropBomb();
+  });
   _scene.input.keyboard.on('keydown_UP', function (event) {
     player.yv--;
   });
@@ -85,7 +88,7 @@ function StartGame() {
   });
 
   livesText = _scene.add.text(
-    width * 0.35,
+    width * 0.25,
     height * 0.01,
     'SCIENTISTS LEFT:' + lives, {
       fontFamily: 'Arial',
@@ -96,7 +99,15 @@ function StartGame() {
       },
   );
 
-  savedText = _scene.add.text(width * 0.75, height * 0.01, 'SAVED: ' + savedPercent, {
+  savedText = _scene.add.text(width * 0.65, height * 0.01, 'SAVED: ' + saved, {
+    fontFamily: 'Arial',
+    fontSize: '18px',
+    color: '#ff0000',
+    stroke: '#ff0000',
+    strokeThickness: 2,
+  });
+
+  killedText = _scene.add.text(width * 0.85, height * 0.01, 'LOST: ' + killed, {
     fontFamily: 'Arial',
     fontSize: '18px',
     color: '#ff0000',
@@ -108,11 +119,12 @@ function StartGame() {
 function updateStats() {
   scoreText.setText('SCORE: ' + score);
   livesText.setText('SCIENTISTS: ' + lives);
-  savedText.setText('SAVED: ' + savedPercent +'%');
+  savedText.setText('SAVED: ' + saved );
+  killedText.setText('LOST: ' + killed );
 }
 
 function spawnShark(sharkX, sharkXV){
-  var sharkY = Phaser.Math.Between(height * SEA_LEVEL, height * SEA_LEVEL);
+  var sharkY = Phaser.Math.Between(height * SEA_LEVEL-20, height * SEA_LEVEL);
   var shark = _scene.add.sprite(
     sharkX,
     sharkY,
@@ -137,6 +149,7 @@ function moveSharks() {
     if (shark.x < 0 || shark.x > width) {
       shark.xv = -shark.xv;
       shark.flipX = !shark.flipX;
+      shark.y = Phaser.Math.Between(height * SEA_LEVEL-20, height * SEA_LEVEL);
     }
     shark.x += shark.xv;
   });
@@ -150,6 +163,7 @@ function killScientist(scientist){
     drop.setTint(blood);
     drop.life = 25;
     bloodDrops.add(drop);
+    killed++;
   }
 }
 function Splash(scientist) {
@@ -162,22 +176,29 @@ function Splash(scientist) {
 }
 
 function Crash() {
-  for (t = 1; t < 200; t++) {
-    var rx = player.x + Phaser.Math.Between(-100, 100);
-    var ry = player.y + Phaser.Math.Between(-100, 100);
-    LINE(rx, ry, player.x, player.y, 0xff0000);
-    player.visible = false;
+  for (t = 1; t < 500; t++) {
+    var x = player.x + Phaser.Math.Between(0,player.width);
+    var y = player.y + Phaser.Math.Between(0, player.height);
+    var centerX = player.x + player.width*.6;
+    var centerY = player.y + player.height*.6;
+    var drop = _scene.add.sprite(x,y-20,'star');
+    drop.yv=(y-centerY)/2;//Phaser.Math.Between(centerY, y);
+    drop.xv=(x-centerX)/5;//Phaser.Math.Between(centerX, x);
+    drop.setScale(Phaser.Math.Between(1,5)/5);
+    drop.setTint(Phaser.Math.Between(blood, yellow));
+    drop.life = 55;
+    particles.add(drop);
   }
-  sh = sh - 1;
-  if (sh == 0) ShowEnd();
+  player.visible = false;
+  gameEnding = true;
 }
 
-function ShowEnd()
+function ShowEnd(wonLost)
 {
   infoText.y=200;
   infoText.x=200;
   infoText.visible = true;
-  infoText.setText(GameOverText);
+  infoText.setText(wonLost ? GameOverTextWon : GameOverTextLost);
 }
 
 function ShowIntro() {
@@ -198,12 +219,19 @@ function spawnScientist(){
   scientist.spriteScale =1;
   scientist.inWater = false;
   scientists.add(scientist);
+  lives--;
 }
 
 function update() {
   if (!startGame) return;
-  if (Phaser.Math.Between(1, 200) == 100)
+  if (gameOver) return;
+  if (Phaser.Math.Between(1, lives * 10) == 1)
      spawnScientist();
+  if(lives==0)
+  {
+    gameOver= true;
+    ShowEnd(saved==START_LIVES ? ShowEnd(true) : ShowEnd(false));
+  }
   if (player.x > width) player.x = 0;
   if (player.x < 0) player.x = width;
   if (player.y < 0) player.y = 0;
@@ -214,7 +242,7 @@ function update() {
       star.setTint(Math.random() * 0xffffff);
   });
 
-  if (player.y > height * SEA_LEVEL) 
+  if (player.y +player.height*.6> height * SEA_LEVEL && !gameEnding) 
     Crash();
   
   scientists.getChildren().forEach((scientist) => {
@@ -243,9 +271,33 @@ function update() {
     moveDrops();
   if(bloodDrops.children.entries.length>0)
     moveBloodDrops();
-  savedPercent = (saved / START_LIVES * 100);
+    if(gameEnding)
+    {
+    moveParticles();
+  }
+  savedPercent = Math.floor((saved / (START_LIVES - lives) * 100));
   updateStats();
 }
+
+
+function moveParticles(){
+  particles.children.entries.forEach(drop => {
+    drop.y+=drop.yv;
+    drop.x+=drop.xv;
+     if(drop.y<height*SEA_LEVEL)
+       drop.yv+=.5;
+    drop.life--;
+    if(drop.life==0) {
+    particles.kill(drop);  
+    drop.destroy();
+    }
+  });
+  if(particles.countActive()==0){
+  gameOver = true;
+  ShowEnd(false);  
+  }
+}
+
 
 function moveBloodDrops(){
   bloodDrops.children.entries.forEach(drop => {

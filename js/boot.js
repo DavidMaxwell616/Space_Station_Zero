@@ -13,8 +13,9 @@ var lives = 20;
 var width = 800;
 var livesText;
 var savedText;
+var killedText;
 var saved = 0;
-var savedPercent = 0;
+var killed = 0;
 var height = 500;
 var grey = 0xAAAAAA;
 var white = 0xFFFFFF;
@@ -22,12 +23,15 @@ var yellow = 0xFFFF55;
 var blood = 0xAA0000;
 var blue = 0x0041FF;
 var pink = 0xFF5555;
+var gameEnding = false;
+var gameOver = false;
 
 var scientists;
 var sharks;
 var stars;
 var bloodDrops;
 var waterDrops;
+var particles;
 
 const introText = 
 '****************************** SPACE STATION ZERO ******************************\n' +
@@ -53,6 +57,11 @@ const introText =
   'Good Luck, Captain Gruber. You will need it!!\n\n' +
   '                                        Press SPACE key to begin';
 
-  const GameOverText = 
+  const GameOverTextLost = 
 '              G A M E  O V E R\n\n' +
 'YOU HAVE FAILED YOUR MISSION!';
+
+const GameOverTextWon = 
+'              G A M E  O V E R\n\n' +
+'YOU HAVE SUCCEEDED YOUR MISSION!!!!';
+
