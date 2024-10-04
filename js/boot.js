@@ -38,8 +38,8 @@ const introText =
   '                   Yet another awesome game directed and produced by\n' +
   '************************* David Maxwell copyright 10/17/90 *************************\n' +
   'Here\'s the story:\n' +
-  'Space Station Zero is an upper atmospheric experimental laboratory containing 20\n' +
-  'of the world leading scientists. One chilly December night, ice developed in the\n' +
+  'Space Station Zero is an upper atmospheric experimental laboratory containing \n' +
+  'the world\'s leading scientists. One chilly December night, ice developed in the\n' +
   'intake valves of the station\'s main support system.The station\'s fuselage was torn\n' +
   'wide open by a oxygen hose that had snapped loose and was thrashing about.\n\n' +
   'The main bay blew open and spilled all of the scientists out into the cold night air,\n' +
